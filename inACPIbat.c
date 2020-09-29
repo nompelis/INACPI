@@ -33,8 +33,8 @@ enum inACPIbat_state {
 };
 
 enum inACPIbat_capacity {
-   CAPACITY_WARNING = 200,
-   CAPACITY_HALT = 100,
+   CAPACITY_WARNING = 250,
+   CAPACITY_HALT = 150,
 };
 
 
@@ -64,7 +64,7 @@ void inACPIbat_Report_HaltWarning( struct inACPIbat_data_s *p )
    syslog( 0, "%s", msg );    // do it this way according to the man page
 
    sprintf( msg, "/sbin/shutdown -t 10 -h now \"Low battery. Shutodwn imminent!\" " );
-// system( msg );
+   system( msg );
 }
 
 
@@ -79,7 +79,7 @@ void inACPIbat_Report_BatteryWarning( struct inACPIbat_data_s *p )
    syslog( 0, "%s", msg );    // do it this way according to the man page
 
    sprintf( msg, "/sbin/shutdown -t 10 -k now \"Battery low; shuting down soon...\" " );
-// system( msg );
+   system( msg );
 }
 
 
@@ -279,10 +279,14 @@ int inACPIbat_Cycle( struct inACPIbat_data_s *p )
 #endif
 
       if( p->mAh_table[ p->cur_entry ] <= CAPACITY_HALT ) {
-         inACPIbat_Report_HaltWarning( p );
+         if( p->state == BATTERY_DISCHARGING ) {
+            inACPIbat_Report_HaltWarning( p );
+         }
          return 0;
       } else if( p->mAh_table[ p->cur_entry ] <= CAPACITY_WARNING ) {
-         inACPIbat_Report_BatteryWarning( p );
+         if( p->state == BATTERY_DISCHARGING ) {
+            inACPIbat_Report_BatteryWarning( p );
+         }
       } else {
 #ifdef _DEBUG_
          printf("Capacity still good enough \n");
